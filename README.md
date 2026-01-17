@@ -7,6 +7,7 @@ Self-hosted Minecraft server on Google Cloud Platform (GCP) with auto-shutdown t
 - **Paper 1.21.11** Minecraft server
 - **Auto-shutdown** when no players connected (saves money!)
 - **One-click start** via web interface or Cloud Function
+- **Dynamic DNS** with Duck DNS (stable hostname)
 - **GitHub Pages** status/start page
 
 ## Quick Start
@@ -35,7 +36,7 @@ curl "https://us-east1-mc-grazing-kangaroos.cloudfunctions.net/mc-start?action=s
 | Minecraft    | Paper 1.21.11               |
 | Port         | 25565                       |
 
-**Note:** External IP changes when VM restarts. Use the status page or Cloud Function to get the current IP.
+**Note:** Use your Duck DNS hostname (e.g., `your-subdomain.duckdns.org:25565`) to connect. The DNS is automatically updated when the server starts.
 
 ## Setup Guide
 
@@ -93,7 +94,20 @@ Files on VM:
 - `/usr/local/bin/mc-idle-shutdown.sh` - Checks player count
 - `/etc/systemd/system/mc-idle-shutdown.timer` - Runs check every 30 seconds
 
-### 4. Remote Start
+### 4. Dynamic DNS (Duck DNS)
+
+Free dynamic DNS that updates automatically when the server starts:
+
+- DNS update service runs on boot via systemd
+- Updates `your-subdomain.duckdns.org` with the current IP
+- Setup: Get a free account at [duckdns.org](https://www.duckdns.org/)
+
+Files on VM:
+
+- `/usr/local/bin/update-dns.sh` - Updates Duck DNS
+- `/etc/systemd/system/update-dns.service` - Runs on boot
+
+### 5. Remote Start
 
 Cloud Function at `https://us-east1-mc-grazing-kangaroos.cloudfunctions.net/mc-start`
 

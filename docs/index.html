@@ -15,39 +15,44 @@
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       color: #fff;
       min-height: 100vh;
+      min-height: 100dvh;
       margin: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 16px;
     }
 
     .container {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 20px;
-      padding: 40px;
+      padding: 32px 24px;
       text-align: center;
-      max-width: 500px;
+      max-width: 420px;
       width: 100%;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     h1 {
-      margin: 0 0 10px 0;
-      font-size: 2rem;
+      margin: 0 0 8px 0;
+      font-size: 1.75rem;
+      line-height: 1.2;
     }
 
     .subtitle {
       color: #888;
-      margin-bottom: 30px;
+      margin: 0 0 24px 0;
+      font-size: 1rem;
     }
 
     .status {
-      padding: 20px;
-      border-radius: 10px;
+      padding: 16px 20px;
+      border-radius: 12px;
       margin-bottom: 20px;
-      font-size: 1.1rem;
+      font-size: 1rem;
+      font-weight: 500;
     }
 
     .status.running {
@@ -70,30 +75,42 @@
       border: 1px solid #2196F3;
     }
 
-    .address {
-      font-family: monospace;
-      font-size: 1.5rem;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 15px 25px;
-      border-radius: 10px;
+    #address-container {
       margin: 20px 0;
-      display: inline-block;
+    }
+
+    .address {
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      font-size: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 14px 18px;
+      border-radius: 10px;
+      display: block;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.2s, background 0.2s;
+      word-break: break-all;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .address:hover {
-      transform: scale(1.05);
+      background: rgba(0, 0, 0, 0.4);
+      transform: scale(1.02);
     }
 
     .address:active {
-      transform: scale(0.95);
+      transform: scale(0.98);
+    }
+
+    .copy-hint {
+      color: #666;
+      font-size: 0.8rem;
+      margin-top: 8px;
     }
 
     .copied {
       color: #4CAF50;
-      font-size: 0.9rem;
-      margin-top: 5px;
+      font-size: 0.85rem;
+      margin-top: 8px;
       opacity: 0;
       transition: opacity 0.3s;
     }
@@ -106,12 +123,14 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      padding: 15px 40px;
-      font-size: 1.1rem;
+      padding: 14px 36px;
+      font-size: 1rem;
+      font-weight: 500;
       border-radius: 30px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
-      margin-top: 20px;
+      margin-top: 16px;
+      -webkit-tap-highlight-color: transparent;
     }
 
     button:hover {
@@ -132,13 +151,13 @@
 
     .spinner {
       display: inline-block;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       border-top-color: #fff;
       animation: spin 1s linear infinite;
-      margin-right: 10px;
+      margin-right: 8px;
       vertical-align: middle;
     }
 
@@ -149,9 +168,26 @@
     }
 
     .info {
-      color: #888;
-      font-size: 0.9rem;
-      margin-top: 30px;
+      color: #777;
+      font-size: 0.85rem;
+      margin-top: 24px;
+      line-height: 1.4;
+    }
+
+    /* Larger screens */
+    @media (min-width: 480px) {
+      .container {
+        padding: 40px 32px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .address {
+        font-size: 1.1rem;
+        padding: 16px 20px;
+      }
     }
   </style>
 </head>
@@ -170,6 +206,7 @@
         <span id="address"></span>
       </div>
       <div id="copied" class="copied">✓ Copied to clipboard!</div>
+      <div id="copy-hint" class="copy-hint">Tap to copy</div>
     </div>
 
     <button id="startBtn" onclick="startServer()" style="display: none;">
@@ -177,7 +214,7 @@
     </button>
 
     <p class="info">
-      Server auto-shuts down after 1 minute of no players to save costs.
+      Server auto-shuts down after 1 minute of inactivity to save costs.
     </p>
   </div>
 
@@ -214,6 +251,11 @@
           statusEl.className = 'status starting';
           statusEl.innerHTML = '<span class="spinner"></span> Server is starting... (~60 seconds)';
           addressContainer.style.display = 'none';
+          // Show hostname hint if available
+          if (data.hostname) {
+            addressContainer.style.display = 'block';
+            addressEl.textContent = data.hostname + ':25565';
+          }
           startBtn.style.display = 'none';
           // Poll for status
           setTimeout(checkStatus, 10000);
@@ -264,8 +306,13 @@
       const address = document.getElementById('address').textContent;
       navigator.clipboard.writeText(address).then(() => {
         const copied = document.getElementById('copied');
+        const hint = document.getElementById('copy-hint');
+        hint.style.display = 'none';
         copied.classList.add('show');
-        setTimeout(() => copied.classList.remove('show'), 2000);
+        setTimeout(() => {
+          copied.classList.remove('show');
+          hint.style.display = 'block';
+        }, 2000);
       });
     }
 

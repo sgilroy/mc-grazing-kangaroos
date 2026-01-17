@@ -29,6 +29,8 @@ MINECRAFT_VERSION="${MINECRAFT_VERSION:-1.21.11}"
 PAPER_BUILD="${PAPER_BUILD:-69}"
 RCON_PASSWORD="${RCON_PASSWORD:?Error: RCON_PASSWORD not set}"
 IDLE_TIMEOUT="${IDLE_TIMEOUT:-60}"
+DUCKDNS_TOKEN="${DUCKDNS_TOKEN:-}"
+DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 
 echo "=== Minecraft Server Setup on GCP ==="
 echo "Project: $PROJECT"
@@ -153,11 +155,40 @@ sudo systemctl enable mc-idle-shutdown.timer
 sudo systemctl start mc-idle-shutdown.timer
 "
 
+# Step 11: Setup Duck DNS (if configured)
+if [ -n "$DUCKDNS_TOKEN" ] && [ -n "$DUCKDNS_DOMAIN" ]; then
+    echo ""
+    echo "=== Step 11: Setup Duck DNS ==="
+    
+    # Upload DNS update script
+    gcloud compute scp scripts/update-dns.sh "$INSTANCE":/tmp/update-dns.sh --zone="$ZONE"
+    gcloud compute scp scripts/update-dns.service "$INSTANCE":/tmp/update-dns.service --zone="$ZONE"
+    
+    gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command "
+sudo mv /tmp/update-dns.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/update-dns.sh
+sudo sed -i 's|DUCKDNS_TOKEN=.*|DUCKDNS_TOKEN=\"$DUCKDNS_TOKEN\"|' /usr/local/bin/update-dns.sh
+sudo sed -i 's|DUCKDNS_DOMAIN=.*|DUCKDNS_DOMAIN=\"$DUCKDNS_DOMAIN\"|' /usr/local/bin/update-dns.sh
+sudo mv /tmp/update-dns.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable update-dns.service
+sudo systemctl start update-dns.service
+"
+    echo "Duck DNS configured: $DUCKDNS_DOMAIN.duckdns.org"
+else
+    echo ""
+    echo "=== Skipping Duck DNS (not configured) ==="
+    echo "To enable: set DUCKDNS_TOKEN and DUCKDNS_DOMAIN in .env.local"
+fi
+
 echo ""
 echo "=== Setup Complete! ==="
 EXTERNAL_IP=$(gcloud compute instances describe "$INSTANCE" --zone="$ZONE" --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 echo ""
 echo "Server Address: $EXTERNAL_IP:25565"
+if [ -n "$DUCKDNS_DOMAIN" ]; then
+    echo "DNS Address:    $DUCKDNS_DOMAIN.duckdns.org:25565"
+fi
 echo ""
 echo "Next steps:"
 echo "1. Deploy Cloud Function: cd cloud-function && ./deploy.sh"

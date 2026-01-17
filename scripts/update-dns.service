@@ -1,0 +1,12 @@
+[Unit]
+Description=Update Duck DNS with current external IP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/update-dns.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

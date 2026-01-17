@@ -5,6 +5,7 @@ const { InstancesClient } = require("@google-cloud/compute").v1;
 const PROJECT = process.env.GCP_PROJECT || "mc-grazing-kangaroos";
 const ZONE = process.env.GCP_ZONE || "us-east1-b";
 const INSTANCE = process.env.GCP_INSTANCE || "mc";
+const DUCKDNS_DOMAIN = process.env.DUCKDNS_DOMAIN || "";
 
 const instancesClient = new InstancesClient();
 
@@ -35,11 +36,13 @@ functions.http("startServer", async (req, res) => {
 
     if (status === "RUNNING") {
       const ip = instance.networkInterfaces[0].accessConfigs[0].natIP;
+      const hostname = DUCKDNS_DOMAIN ? `${DUCKDNS_DOMAIN}.duckdns.org` : null;
       res.json({
         status: "running",
         message: "Server is online!",
         ip: ip,
-        address: `${ip}:25565`,
+        hostname: hostname,
+        address: hostname ? `${hostname}:25565` : `${ip}:25565`,
       });
       return;
     }
@@ -54,10 +57,14 @@ functions.http("startServer", async (req, res) => {
         });
 
         console.log(`Starting instance, operation: ${operation.name}`);
+        const hostname = DUCKDNS_DOMAIN
+          ? `${DUCKDNS_DOMAIN}.duckdns.org`
+          : null;
 
         res.json({
           status: "starting",
           message: "Server is starting! It will be ready in ~60 seconds.",
+          hostname: hostname,
           note: "Refresh to check status.",
         });
         return;
