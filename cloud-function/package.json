@@ -1,0 +1,10 @@
+{
+  "name": "mc-server-starter",
+  "version": "1.0.0",
+  "description": "Cloud Function to start Minecraft server VM",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@google-cloud/compute": "^4.0.0"
+  }
+}

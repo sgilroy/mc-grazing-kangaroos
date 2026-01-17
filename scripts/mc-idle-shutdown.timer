@@ -1,0 +1,11 @@
+[Unit]
+Description=Minecraft Idle Shutdown Timer
+Requires=minecraft.service
+After=minecraft.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30s
+
+[Install]
+WantedBy=timers.target

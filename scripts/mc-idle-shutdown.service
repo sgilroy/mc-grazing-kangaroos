@@ -1,0 +1,8 @@
+[Unit]
+Description=Minecraft Idle Shutdown Check
+Requires=minecraft.service
+After=minecraft.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mc-idle-shutdown.sh
