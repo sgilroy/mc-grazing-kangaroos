@@ -70,6 +70,11 @@
       border: 1px solid #FFC107;
     }
 
+    .status.minecraft-starting {
+      background: rgba(255, 152, 0, 0.2);
+      border: 1px solid #FF9800;
+    }
+
     .status.loading {
       background: rgba(33, 150, 243, 0.2);
       border: 1px solid #2196F3;
@@ -249,7 +254,7 @@
 
         case 'starting':
           statusEl.className = 'status starting';
-          statusEl.innerHTML = '<span class="spinner"></span> Server is starting... (~60 seconds)';
+          statusEl.innerHTML = '<span class="spinner"></span> VM is starting... (~60 seconds)';
           addressContainer.style.display = 'none';
           // Show hostname hint if available
           if (data.hostname) {
@@ -261,10 +266,23 @@
           setTimeout(checkStatus, 10000);
           break;
 
+        case 'minecraft_starting':
+          statusEl.className = 'status minecraft-starting';
+          statusEl.innerHTML = '<span class="spinner"></span> Minecraft server is starting...';
+          addressContainer.style.display = 'block';
+          addressEl.textContent = data.address;
+          startBtn.style.display = 'none';
+          // Poll more frequently as we're close to ready
+          setTimeout(checkStatus, 5000);
+          break;
+
         case 'staging':
           statusEl.className = 'status starting';
           statusEl.innerHTML = '<span class="spinner"></span> Server is booting...';
-          addressContainer.style.display = 'none';
+          if (data.address) {
+            addressContainer.style.display = 'block';
+            addressEl.textContent = data.address;
+          }
           startBtn.style.display = 'none';
           setTimeout(checkStatus, 5000);
           break;
@@ -272,14 +290,20 @@
         case 'stopped':
           statusEl.className = 'status stopped';
           statusEl.innerHTML = '⏹️ Server is OFFLINE';
-          addressContainer.style.display = 'none';
+          if (data.address) {
+            addressContainer.style.display = 'block';
+            addressEl.textContent = data.address;
+          }
           startBtn.style.display = 'inline-block';
           break;
 
         default:
           statusEl.className = 'status starting';
           statusEl.innerHTML = `<span class="spinner"></span> ${data.message || 'Please wait...'}`;
-          addressContainer.style.display = 'none';
+          if (data.address) {
+            addressContainer.style.display = 'block';
+            addressEl.textContent = data.address;
+          }
           startBtn.style.display = 'none';
           setTimeout(checkStatus, 5000);
       }
