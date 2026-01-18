@@ -11,30 +11,100 @@ const DUCKDNS_DOMAIN = process.env.DUCKDNS_DOMAIN || "";
 const instancesClient = new InstancesClient();
 
 /**
- * Check if Minecraft server is accepting connections on port 25565
+ * Query Minecraft server using Server List Ping protocol
+ * Returns server status including player count
  * @param {string} host - IP address or hostname
  * @param {number} timeout - Connection timeout in milliseconds
- * @returns {Promise<boolean>} - true if server is accepting connections
+ * @returns {Promise<{online: boolean, players?: {online: number, max: number}, version?: string, motd?: string}>}
  */
-function checkMinecraftServer(host, timeout = 5000) {
+function queryMinecraftServer(host, timeout = 5000) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
+    let buffer = Buffer.alloc(0);
 
     socket.setTimeout(timeout);
 
     socket.on("connect", () => {
-      socket.destroy();
-      resolve(true);
+      // Build handshake packet
+      const hostBuffer = Buffer.from(host, "utf8");
+      const handshakeData = Buffer.concat([
+        Buffer.from([0x00]), // Packet ID
+        Buffer.from([0xff, 0xff, 0xff, 0xff, 0x0f]), // Protocol version (-1 as varint)
+        Buffer.from([hostBuffer.length]), // Host string length
+        hostBuffer, // Host
+        Buffer.from([0x63, 0xdd]), // Port 25565 as unsigned short
+        Buffer.from([0x01]), // Next state: status
+      ]);
+
+      // Send handshake with length prefix
+      const handshakePacket = Buffer.concat([
+        Buffer.from([handshakeData.length]),
+        handshakeData,
+      ]);
+
+      // Status request packet (empty, just packet ID 0x00)
+      const statusRequest = Buffer.from([0x01, 0x00]);
+
+      socket.write(Buffer.concat([handshakePacket, statusRequest]));
+    });
+
+    socket.on("data", (data) => {
+      buffer = Buffer.concat([buffer, data]);
+
+      // Try to parse the response
+      try {
+        // Skip packet length varint and packet ID
+        let offset = 0;
+        // Read packet length varint
+        while (offset < buffer.length && (buffer[offset] & 0x80) !== 0)
+          offset++;
+        offset++; // Skip last byte of varint
+
+        if (offset >= buffer.length) return; // Need more data
+
+        // Skip packet ID (0x00)
+        offset++;
+
+        // Read JSON string length varint
+        let jsonLength = 0;
+        let shift = 0;
+        while (offset < buffer.length) {
+          const byte = buffer[offset++];
+          jsonLength |= (byte & 0x7f) << shift;
+          if ((byte & 0x80) === 0) break;
+          shift += 7;
+        }
+
+        if (offset + jsonLength > buffer.length) return; // Need more data
+
+        const jsonString = buffer
+          .slice(offset, offset + jsonLength)
+          .toString("utf8");
+        const response = JSON.parse(jsonString);
+
+        socket.destroy();
+        resolve({
+          online: true,
+          players: response.players || { online: 0, max: 20 },
+          version: response.version?.name,
+          motd:
+            typeof response.description === "string"
+              ? response.description
+              : response.description?.text,
+        });
+      } catch (e) {
+        // Keep waiting for more data or timeout
+      }
     });
 
     socket.on("timeout", () => {
       socket.destroy();
-      resolve(false);
+      resolve({ online: false });
     });
 
     socket.on("error", () => {
       socket.destroy();
-      resolve(false);
+      resolve({ online: false });
     });
 
     socket.connect(25565, host);
@@ -71,16 +141,18 @@ functions.http("startServer", async (req, res) => {
       const hostname = DUCKDNS_DOMAIN ? `${DUCKDNS_DOMAIN}.duckdns.org` : null;
       const address = hostname ? `${hostname}:25565` : `${ip}:25565`;
 
-      // Check if Minecraft server is actually accepting connections
-      const minecraftReady = await checkMinecraftServer(ip);
+      // Query Minecraft server for status and player count
+      const serverInfo = await queryMinecraftServer(ip);
 
-      if (minecraftReady) {
+      if (serverInfo.online) {
         res.json({
           status: "running",
           message: "Server is online!",
           ip: ip,
           hostname: hostname,
           address: address,
+          players: serverInfo.players,
+          version: serverInfo.version,
         });
       } else {
         // VM is running but Minecraft server is still starting

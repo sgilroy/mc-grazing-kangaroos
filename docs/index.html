@@ -80,6 +80,21 @@
       border: 1px solid #2196F3;
     }
 
+    .players {
+      font-size: 1.1rem;
+      color: #aaa;
+      margin: 16px 0;
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .players.has-players {
+      color: #4CAF50;
+      background: rgba(76, 175, 80, 0.15);
+    }
+
     #address-container {
       margin: 20px 0;
     }
@@ -206,6 +221,10 @@
       <span class="spinner"></span> Checking server status...
     </div>
 
+    <div id="players-container" style="display: none;">
+      <div id="players" class="players">👥 0 / 20 players</div>
+    </div>
+
     <div id="address-container" style="display: none;">
       <div class="address" onclick="copyAddress()" title="Click to copy">
         <span id="address"></span>
@@ -237,11 +256,25 @@
       }
     }
 
+    function updatePlayerCount(players) {
+      const playersContainer = document.getElementById('players-container');
+      const playersEl = document.getElementById('players');
+
+      if (players) {
+        playersContainer.style.display = 'block';
+        playersEl.textContent = `👥 ${players.online} / ${players.max} players`;
+        playersEl.className = players.online > 0 ? 'players has-players' : 'players';
+      } else {
+        playersContainer.style.display = 'none';
+      }
+    }
+
     function updateUI(data) {
       const statusEl = document.getElementById('status');
       const addressContainer = document.getElementById('address-container');
       const addressEl = document.getElementById('address');
       const startBtn = document.getElementById('startBtn');
+      const playersContainer = document.getElementById('players-container');
 
       switch (data.status) {
         case 'running':
@@ -250,12 +283,14 @@
           addressContainer.style.display = 'block';
           addressEl.textContent = data.address;
           startBtn.style.display = 'none';
+          updatePlayerCount(data.players);
           break;
 
         case 'starting':
           statusEl.className = 'status starting';
           statusEl.innerHTML = '<span class="spinner"></span> VM is starting... (~60 seconds)';
           addressContainer.style.display = 'none';
+          playersContainer.style.display = 'none';
           // Show hostname hint if available
           if (data.hostname) {
             addressContainer.style.display = 'block';
@@ -272,6 +307,7 @@
           addressContainer.style.display = 'block';
           addressEl.textContent = data.address;
           startBtn.style.display = 'none';
+          playersContainer.style.display = 'none';
           // Poll more frequently as we're close to ready
           setTimeout(checkStatus, 5000);
           break;
@@ -295,6 +331,7 @@
             addressEl.textContent = data.address;
           }
           startBtn.style.display = 'inline-block';
+          playersContainer.style.display = 'none';
           break;
 
         default:
@@ -305,6 +342,7 @@
             addressEl.textContent = data.address;
           }
           startBtn.style.display = 'none';
+          playersContainer.style.display = 'none';
           setTimeout(checkStatus, 5000);
       }
     }
