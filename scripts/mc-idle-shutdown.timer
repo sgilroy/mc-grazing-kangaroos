@@ -1,11 +1,14 @@
 [Unit]
 Description=Minecraft Idle Shutdown Timer
-Requires=minecraft.service
+# Use Wants instead of Requires to prevent timer from stopping if minecraft restarts
+Wants=minecraft.service
 After=minecraft.service
 
 [Timer]
 OnBootSec=2min
 OnUnitActiveSec=30s
+# Keep timer active even if triggered service fails
+Persistent=true
 
 [Install]
 WantedBy=timers.target

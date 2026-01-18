@@ -138,21 +138,14 @@ gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command \
 
 echo ""
 echo "=== Step 10: Setup Idle Shutdown ==="
-# Upload idle shutdown script
-gcloud compute scp scripts/mc-idle-shutdown.sh "$INSTANCE":/tmp/mc-idle-shutdown.sh --zone="$ZONE"
-gcloud compute scp scripts/mc-idle-shutdown.timer "$INSTANCE":/tmp/mc-idle-shutdown.timer --zone="$ZONE"
-gcloud compute scp scripts/mc-idle-shutdown.service "$INSTANCE":/tmp/mc-idle-shutdown.service --zone="$ZONE"
+# Deploy scripts using the deploy script
+./scripts/deploy-scripts.sh
 
+# Configure RCON password and idle timeout
 gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command "
-sudo mv /tmp/mc-idle-shutdown.sh /usr/local/bin/
-sudo chmod +x /usr/local/bin/mc-idle-shutdown.sh
 sudo sed -i 's|RCON_PASS=.*|RCON_PASS=\"$RCON_PASSWORD\"|' /usr/local/bin/mc-idle-shutdown.sh
 sudo sed -i 's|IDLE_THRESHOLD=.*|IDLE_THRESHOLD=$IDLE_TIMEOUT|' /usr/local/bin/mc-idle-shutdown.sh
-sudo mv /tmp/mc-idle-shutdown.timer /etc/systemd/system/
-sudo mv /tmp/mc-idle-shutdown.service /etc/systemd/system/
-sudo systemctl daemon-reload
 sudo systemctl enable mc-idle-shutdown.timer
-sudo systemctl start mc-idle-shutdown.timer
 "
 
 # Step 11: Setup Duck DNS (if configured)

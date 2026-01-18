@@ -89,10 +89,28 @@ Located in `/opt/minecraft/server/server.properties`:
 
 The server monitors player count via RCON and shuts down the VM after 1 minute of inactivity.
 
-Files on VM:
+#### Deploying Scripts
 
-- `/usr/local/bin/mc-idle-shutdown.sh` - Checks player count
-- `/etc/systemd/system/mc-idle-shutdown.timer` - Runs check every 30 seconds
+After modifying scripts locally, deploy to the server:
+
+```bash
+./scripts/deploy-scripts.sh
+```
+
+#### Maintenance Mode
+
+Temporarily disable auto-shutdown for server maintenance:
+
+```bash
+gcloud compute ssh mc --zone us-east1-b
+
+sudo maintenance-mode.sh status    # Check current status
+sudo maintenance-mode.sh on        # Disable for 1 hour (default)
+sudo maintenance-mode.sh on 30     # Disable for 30 minutes
+sudo maintenance-mode.sh off       # Re-enable early
+```
+
+The script automatically re-enables auto-shutdown after the specified duration.
 
 ### 4. Dynamic DNS (Duck DNS)
 

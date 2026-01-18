@@ -4,7 +4,8 @@
 
 RCON_HOST="localhost"
 RCON_PORT="25575"
-RCON_PASS="${RCON_PASSWORD:-changeme}"  # Set via environment or update on server
+# Read RCON password from server.properties for reliability
+RCON_PASS=$(grep -oP '^rcon\.password=\K.*' /opt/minecraft/server/server.properties 2>/dev/null || echo "${RCON_PASSWORD:-changeme}")
 IDLE_THRESHOLD=60  # seconds
 STATE_FILE="/tmp/mc-idle-since"
 
