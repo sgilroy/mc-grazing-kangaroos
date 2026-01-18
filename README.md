@@ -177,8 +177,41 @@ gcloud compute instances start mc --zone us-east1-b
 
 With auto-shutdown, you only pay for actual play time!
 
+## Restoring a Backup
+
+When restoring a world backup from Minecraft Realms or vanilla Minecraft to Paper server, **dimension folders must be moved** to match Paper's folder structure.
+
+### ⚠️ Important: Paper Folder Structure
+
+| Dimension | Vanilla/Realms Backup | Paper Server          |
+| --------- | --------------------- | --------------------- |
+| Overworld | `world/region/`       | `world/region/` ✅    |
+| Nether    | `world/DIM-1/`        | `world_nether/DIM-1/` |
+| The End   | `world/DIM1/`         | `world_the_end/DIM1/` |
+
+If you don't move the dimension folders, **the Nether and End will be regenerated from seed**, losing all builds!
+
+### Restore Procedure
+
+Use the included restore script which handles the dimension folder conversion automatically:
+
+```bash
+./scripts/restore-backup.sh /path/to/your-backup.zip
+```
+
+The script will:
+
+1. Upload the backup to the VM
+2. Stop the Minecraft server
+3. Extract and restore the world
+4. **Automatically move DIM-1 and DIM1** to Paper's folder structure
+5. Fix permissions and restart the server
+
+For manual restoration or troubleshooting, see the script source for the detailed commands.
+
 ## Troubleshooting
 
 - **Can't connect:** Server may be stopped. Use status page to start it.
 - **Lag:** Try reducing `view-distance` or upgrading VM.
 - **Version mismatch:** Clients must use Minecraft 1.21.11.
+- **Nether/End reset after restore:** You forgot to move `DIM-1` and `DIM1` folders. See [Restoring a Backup](#restoring-a-backup).
