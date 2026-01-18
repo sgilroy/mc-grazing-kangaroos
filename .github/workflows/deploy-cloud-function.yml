@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-to-gcp:
+    name: Deploy to Google Cloud
     runs-on: ubuntu-latest
     permissions:
       contents: read

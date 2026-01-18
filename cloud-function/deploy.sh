@@ -18,8 +18,12 @@ DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 
 echo "Deploying Cloud Function to $PROJECT in $REGION..."
 
-# Enable required APIs
-gcloud services enable cloudfunctions.googleapis.com cloudbuild.googleapis.com run.googleapis.com --project "$PROJECT"
+# Enable required APIs (skip in CI - APIs should be pre-enabled in the project)
+if [ -z "$CI" ]; then
+    gcloud services enable cloudfunctions.googleapis.com cloudbuild.googleapis.com run.googleapis.com --project "$PROJECT"
+else
+    echo "Skipping API enablement in CI (APIs should be pre-enabled)"
+fi
 
 # Deploy function
 gcloud functions deploy mc-start \
