@@ -180,18 +180,39 @@ gcloud compute ssh mc --zone us-east1-b --command \
 
 ### Upgrade VM (if CPU-bound)
 
+Use the migration script to change machine types:
+
 ```bash
-gcloud compute instances stop mc --zone us-east1-b
-gcloud compute instances set-machine-type mc --zone us-east1-b --machine-type e2-standard-4
-gcloud compute instances start mc --zone us-east1-b
+./scripts/migrate-machine-type.sh              # Show available types
+./scripts/migrate-machine-type.sh e2-standard-4  # Upgrade to 4 vCPU/16GB
 ```
+
+The script will stop the VM, change the type, and offer to restart it. No need to recreate the VM - just a simple stop/change/start.
 
 ## Cost Estimate
 
-| Machine Type  | vCPUs      | RAM  | ~Monthly (24/7) | ~Monthly (4hr/day) |
-| ------------- | ---------- | ---- | --------------- | ------------------ |
-| e2-medium     | 2 (shared) | 4GB  | ~$24            | ~$4                |
-| e2-standard-4 | 4          | 16GB | ~$98            | ~$16               |
+### Shared vCPU (E2) - Budget-friendly, burstable
+
+| Machine Type  | vCPUs      | RAM  | ~Monthly (24/7) | ~Monthly (4hr/day) | Notes                          |
+| ------------- | ---------- | ---- | --------------- | ------------------ | ------------------------------ |
+| e2-medium     | 2 (shared) | 4GB  | ~$24            | ~$4                | Current default, budget option |
+| e2-standard-2 | 2 (shared) | 8GB  | ~$49            | ~$8                | Double RAM, good upgrade       |
+| e2-highmem-2  | 2 (shared) | 16GB | ~$66            | ~$11               | **Best value for RAM** ⭐      |
+| e2-standard-4 | 4 (shared) | 16GB | ~$98            | ~$16               | More CPU for mods/plugins      |
+| e2-highmem-4  | 4 (shared) | 32GB | ~$132           | ~$22               | Heavy modpacks, large worlds   |
+
+### Dedicated vCPU (N-series) - Consistent performance
+
+| Machine Type   | vCPUs | RAM  | ~Monthly (24/7) | ~Monthly (4hr/day) | Notes                            |
+| -------------- | ----- | ---- | --------------- | ------------------ | -------------------------------- |
+| n2d-standard-2 | 2     | 8GB  | ~$62            | ~$10               | AMD EPYC, dedicated              |
+| n2d-highmem-2  | 2     | 16GB | ~$83            | ~$14               | Best value dedicated + high RAM  |
+| n4-standard-2  | 2     | 8GB  | ~$66            | ~$11               | Newer Intel, dedicated           |
+| n4-highmem-2   | 2     | 16GB | ~$87            | ~$15               | Intel, high RAM                  |
+| n2d-standard-4 | 4     | 16GB | ~$123           | ~$21               | 4 dedicated cores                |
+| n2d-highmem-4  | 4     | 32GB | ~$166           | ~$28               | Best performance, heavy workload |
+
+**Recommendation:** Start with `e2-highmem-2` (~$66/mo) for best value. Upgrade to `n2d-highmem-2` (~$83/mo) if you notice lag spikes—dedicated vCPUs provide more consistent performance for busy servers.
 
 With auto-shutdown, you only pay for actual play time!
 
