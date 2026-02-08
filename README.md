@@ -248,6 +248,30 @@ The script will:
 
 For manual restoration or troubleshooting, see the script source for the detailed commands.
 
+## Managing Multiple Worlds (Fast Switching)
+
+Use `scripts/world-manager.sh` to build a reusable world archive library on the VM and switch safely between worlds.
+
+```bash
+# Show active world sizes + saved world archives
+./scripts/world-manager.sh list
+
+# Save current live world as a named archive
+./scripts/world-manager.sh save fitcraft-main
+
+# Import a world zip (Realms/vanilla) into archive library
+./scripts/world-manager.sh import-zip ~/Downloads/my-world.zip creative-test
+
+# Switch live server to a saved archive (auto-backups current world first)
+./scripts/world-manager.sh switch creative-test
+```
+
+Notes:
+- Archives are stored on the VM at `/opt/minecraft/world-library/*.tar.gz`
+- `switch` always creates an automatic backup archive before replacing the live world
+- The script prints free disk and key path sizes before and after each storage-heavy step
+- Include `--force` on `save` or `import-zip` to overwrite an existing archive name
+
 ## Troubleshooting
 
 - **Can't connect:** Server may be stopped. Use status page to start it.
