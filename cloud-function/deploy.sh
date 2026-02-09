@@ -28,7 +28,7 @@ fi
 # Deploy function
 gcloud functions deploy mc-start \
     --gen2 \
-    --runtime nodejs20 \
+    --runtime nodejs24 \
     --region "$REGION" \
     --source . \
     --entry-point startServer \

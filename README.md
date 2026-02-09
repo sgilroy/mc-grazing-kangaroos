@@ -145,6 +145,29 @@ cd cloud-function
 ./deploy.sh
 ```
 
+### Reliability vs Cost (Cloud Function)
+
+Current deploy defaults are tuned for low cost with acceptable reliability:
+
+- Runtime: `nodejs24` (latest LTS available in GCF Gen2)
+- Memory: `512Mi` (avoids OOM crashes seen at `256Mi`)
+- CPU/concurrency profile: fractional CPU with concurrency `1`
+
+Tradeoff summary:
+
+- Lower cost (`512Mi`, fractional CPU, concurrency `1`):
+  - Pros: cheapest stable setup for low traffic.
+  - Cons: bursts of status checks can trigger more cold starts.
+- Higher reliability under bursts (`--cpu 1` + higher `--concurrency`):
+  - Pros: fewer cold starts during traffic spikes and polling bursts.
+  - Cons: higher Cloud Function cost.
+
+Important GCF constraint:
+
+- On Gen2, `concurrency > 1` requires at least `1 vCPU`. You cannot keep fractional CPU and raise concurrency.
+
+Frontend polling was also adjusted to reduce overlapping requests, which improves reliability without increasing Cloud Function cost.
+
 ## Managing the Server
 
 ### SSH into the VM
