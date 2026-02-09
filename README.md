@@ -134,6 +134,17 @@ Query parameters:
 - `?action=status` - Check status only (default)
 - `?action=start` - Start if stopped
 
+### Cloud Function Troubleshooting
+
+If the status page shows `503 Service Unavailable` plus a browser CORS error for `mc-start`, the Cloud Function likely crashed before sending headers. A common cause is insufficient memory on Gen2.
+
+Redeploy with at least `512Mi` memory:
+
+```bash
+cd cloud-function
+./deploy.sh
+```
+
 ## Managing the Server
 
 ### SSH into the VM

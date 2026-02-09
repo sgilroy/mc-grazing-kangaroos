@@ -34,6 +34,7 @@ gcloud functions deploy mc-start \
     --entry-point startServer \
     --trigger-http \
     --allow-unauthenticated \
+    --memory 512Mi \
     --set-env-vars "GCP_PROJECT=$PROJECT,GCP_ZONE=${GCP_ZONE:-us-east1-b},GCP_INSTANCE=${GCP_INSTANCE:-mc},DUCKDNS_DOMAIN=$DUCKDNS_DOMAIN" \
     --project "$PROJECT"
 
