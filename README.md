@@ -77,13 +77,19 @@ This repo contains a complete setup for a cost-optimized Minecraft server on GCP
 
 ### 2. Server Configuration
 
-Located in `/opt/minecraft/server/server.properties`:
+`/opt/minecraft/server/server.properties`:
 
 | Setting               | Value | Description                      |
 | --------------------- | ----- | -------------------------------- |
 | `view-distance`       | 12    | Chunk render distance            |
 | `simulation-distance` | 12    | Entity/redstone simulation range |
 | `max-players`         | 20    | Maximum concurrent players       |
+
+`/opt/minecraft/server/config/paper-global.yml`:
+
+| Setting                                            | Value  | Description                                                             |
+| -------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
+| `unsupported-settings.allow-piston-duplication`   | `true` | Enables TNT/carpet/rail duping by default for behavior closer to vanilla/Realms |
 
 ### 3. Auto-Shutdown System
 

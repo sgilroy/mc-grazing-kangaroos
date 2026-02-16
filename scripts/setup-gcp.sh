@@ -110,7 +110,30 @@ EOF
 '"
 
 echo ""
-echo "=== Step 8: Create Systemd Service ==="
+echo "=== Step 8: Configure Paper (paper-global.yml) ==="
+gcloud compute scp scripts/paper-global.yml "$INSTANCE":/tmp/paper-global.yml --zone="$ZONE"
+gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command "sudo -u minecraft bash -lc '
+PAPER_GLOBAL=/opt/minecraft/server/config/paper-global.yml
+PAPER_GLOBAL_TEMPLATE=/tmp/paper-global.yml
+mkdir -p /opt/minecraft/server/config
+
+if [ -f \"\$PAPER_GLOBAL\" ]; then
+    if grep -q \"^[[:space:]]*allow-piston-duplication:\" \"\$PAPER_GLOBAL\"; then
+        sed -i \"s/^[[:space:]]*allow-piston-duplication:.*/  allow-piston-duplication: true/\" \"\$PAPER_GLOBAL\"
+    elif grep -q \"^unsupported-settings:\" \"\$PAPER_GLOBAL\"; then
+        sed -i \"/^unsupported-settings:/a\\  allow-piston-duplication: true\" \"\$PAPER_GLOBAL\"
+    else
+        cat \"\$PAPER_GLOBAL_TEMPLATE\" >> \"\$PAPER_GLOBAL\"
+    fi
+else
+    cp \"\$PAPER_GLOBAL_TEMPLATE\" \"\$PAPER_GLOBAL\"
+fi
+
+grep -n \"allow-piston-duplication\" \"\$PAPER_GLOBAL\"
+'"
+
+echo ""
+echo "=== Step 9: Create Systemd Service ==="
 gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command "sudo tee /etc/systemd/system/minecraft.service > /dev/null << 'EOF'
 [Unit]
 Description=Minecraft Server (Paper)
@@ -132,12 +155,12 @@ sudo systemctl enable minecraft
 sudo systemctl start minecraft"
 
 echo ""
-echo "=== Step 9: Install mcrcon ==="
+echo "=== Step 10: Install mcrcon ==="
 gcloud compute ssh "$INSTANCE" --zone="$ZONE" --command \
     "cd /tmp && curl -sL https://github.com/Tiiffi/mcrcon/releases/download/v0.7.2/mcrcon-0.7.2-linux-x86-64.tar.gz | tar xz && sudo mv mcrcon /usr/local/bin/"
 
 echo ""
-echo "=== Step 10: Setup Idle Shutdown ==="
+echo "=== Step 11: Setup Idle Shutdown ==="
 # Deploy scripts using the deploy script
 ./scripts/deploy-scripts.sh
 
@@ -148,10 +171,10 @@ sudo sed -i 's|IDLE_THRESHOLD=.*|IDLE_THRESHOLD=$IDLE_TIMEOUT|' /usr/local/bin/m
 sudo systemctl enable mc-idle-shutdown.timer
 "
 
-# Step 11: Setup Duck DNS (if configured)
+# Step 12: Setup Duck DNS (if configured)
 if [ -n "$DUCKDNS_TOKEN" ] && [ -n "$DUCKDNS_DOMAIN" ]; then
     echo ""
-    echo "=== Step 11: Setup Duck DNS ==="
+    echo "=== Step 12: Setup Duck DNS ==="
     
     # Upload DNS update script
     gcloud compute scp scripts/update-dns.sh "$INSTANCE":/tmp/update-dns.sh --zone="$ZONE"
